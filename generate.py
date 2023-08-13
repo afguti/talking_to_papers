@@ -42,7 +42,7 @@ def get_completion_and_token_count(messages, #Here I can count the number of tok
     }
     return content, token_dict
 
-#Function to answer questions
+#Function to answer questions based on the PDF
 def query(question: str) -> str:
     q_counter = 0
     key = "no"
@@ -61,7 +61,11 @@ def query(question: str) -> str:
 
 #Document loading
 from langchain.document_loaders import PyPDFLoader
-location = input("PDF location: ")
+paper_id = sys.argv[1]
+if len(sys.argv) < 2:
+    location = input("PDF location: ")
+else:
+    location = f"~/Documents/pets/{paper_id}.pdf"
 loader = PyPDFLoader(location)
 pages = loader.load()
 print(f"Document loaded. There is a total of {len(pages)} pages.")
@@ -97,20 +101,29 @@ qa_chain = RetrievalQA.from_chain_type(
     retriever=vectordb.as_retriever()
 )
 
-###Gueting the main topics to drive the conversation
-search = arxiv.Search(id_list=["2308.02624"])
+###Gueting the main topics to drive the conversation WHE NEED TO SAVE THIS IN A FILE AND IF THE FILE EXIST SKIP THIS STEP
+search = arxiv.Search(id_list=[paper_id])
 paper = next(search.results())
-prGreen("\nTopics to drive the conversation:")
-text = f'List 10 topics from the TEXT enclosed below for an engaging conversation between the autors of the paper and a regular person with no background in science who wants to understand the implications of the content of the TEXT for an average person. The questions have to be in an order that can help to understand the TEXT. The questions have to be relevant to the content of the TEXT. The questions have to be put in a python list.\nTEXT:\n{paper.summary}'
-messages =  [  
-{'role':'system', 
- 'content':"""You are a popular science communicator"""},    
-{'role':'user', 'content':text},  
-]
-ans, token_dict = get_completion_and_token_count(messages, temperature=0)
-lines = ans.strip().split("\n")
-qq = [line.split(". ", 1)[1] for line in lines] #These are the topics that will be used for the conversation
-print(ans)
+if not(os.path.exists('./output/topics.txt')):
+    prGreen("\nTopics to drive the conversation:")
+    text = f'List 10 topics from the TEXT enclosed below for an engaging conversation between the autors of the paper and a regular person with no background in science who wants to understand the implications of the content of the TEXT for an average person. The questions have to be in an order that can help to understand the TEXT. The questions have to be relevant to the content of the TEXT. The questions have to be put in a python list.\nTEXT:\n{paper.summary}'
+    messages =  [  
+    {'role':'system', 
+     'content':"""You are a popular science communicator"""},    
+    {'role':'user', 'content':text},  
+    ]
+    ans, token_dict = get_completion_and_token_count(messages, temperature=0)
+    save_output("topics.txt",ans)
+    lines = ans.strip().split("\n")
+    qq = [line.split(". ", 1)[1] for line in lines] #These are the topics that will be used for the conversation
+    print(ans)
+else:
+    prGreen("Topics were chose already!")
+    with open("./output/topics.txt", "r") as file:
+        ans = file.read()
+    lines = ans.strip().split("\n")
+    qq = [line.split(". ", 1)[1] for line in lines] #These are the topics that will be used for the conversation
+    print(ans)   
 
 ###The introduction of the episode
 if not(os.path.exists('./output/final_p1.mp3')):
@@ -132,31 +145,46 @@ else:
 	print("\nPart 1, Introduction is already completed.")	
 
 ###The start of the conversation
-if not(os.path.exists('./output/conversation1.mp3')):
+if not(os.path.exists('./output/conversation_0.mp3')):
     prGreen("\nQuicking off the conversation:")
     print(f"Authors are: {paper.authors}")
     author = input("Author: ")
     firsq = query(f'Based on the content, print out the beginning of an engaign conversation between a podcast host and a guest named {author} about {qq[0]}. The conversation has to be easy to understand for popular science communication. This part is the ontinuation after an introduction. AVOID LISTING NAMES.')
     save_output("main.txt", f'{firsq}\n\n')
-    save_output("conversation.txt", f'{firsq}\n\n')
-    subprocess.run(["open", "./output/conversation.txt"], check=True)
-    prGreenIn("\nNOW REVIEW conversation.txt AND PRESS ENTER TO CONTINUE")
-    with open('./output/conversation.txt', 'r') as file:
+    save_output("conversation_0.txt", f'{firsq}')
+    subprocess.run(["open", "./output/conversation_0.txt"], check=True)
+    prGreenIn("\nNOW REVIEW conversation_0.txt AND PRESS ENTER TO CONTINUE")
+    with open('./output/conversation_0.txt', 'r') as file:
     	firsq = file.read()	
     hostd, guestd = separate(firsq,"Podcast Host",author)
     combined = combine(hostd, guestd)
-    combined.export(f"./output/conversation1.mp3", format="mp3")
+    combined.export(f"./output/conversation_0.mp3", format="mp3")
 else:
 	print("\nPart2, Start of the conversation is already completed.")
 
 ###The conversation
 prGreen("\nThe conversation:")
 for i in range(len(qq)-1):
-    prGreen(f"topic {i+1}: {qq[i+1]}\n")
-    conv = query(f'Based on the content, print out a part of an engaign conversation between a podcast host and a guest about {qq[i+1]}. The conversation has to be easy to understand for popular science communication. The conversation is just part of a more broader conversation. AVOID LISTING NAMES.')
-    prGreen(f"We got topic {i+1}")
-    save_output("main.txt", f'{conv}\n')
+    if not(os.path.exists(f'./output/conversation_{i+1}.mp3')):
+        prGreen(f"topic {i+1}: {qq[i+1]}\n")
+        conv = query(f'Based on the content, print out a part of an engaign conversation between a podcast host and a guest about {qq[i+1]}. The conversation has to be easy to understand for popular science communication. The conversation is just part of a more broader conversation. AVOID LISTING NAMES.')
+        prGreen(f"We got topic {i+1}")
+        save_output("main.txt", f'{conv}\n\n')
+
+        save_output(f"conversation_{i+1}.txt", f'{conv}')
+        subprocess.run(["open", f"./output/conversation_{i+1}.txt"], check=True)
+        prGreenIn(f"\nNOW REVIEW conversation_{i+1}.txt AND PRESS ENTER TO CONTINUE")
+        with open(f'./output/conversation_{i+1}.txt', 'r') as file:
+        	conv = file.read()
+        hostd, guestd = separate(conv,"Podcast Host","Guest")
+        combined = combine(hostd, guestd)
+        combined.export(f"./output/conversation_{i+1}.mp3", format="mp3")
+    else:
+	    print(f"\nconversation_{i+1}.mp3 is already completed.")
+
 prGreen("We have the conversation!!")
+
+###Combining the conversations from 0 to 9
 
 ###The closure
 prGreen("\nThe ending:")
