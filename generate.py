@@ -158,6 +158,7 @@ if not(os.path.exists('./output/conversation_0.mp3')):
     	firsq = file.read()	
     hostd, guestd = separate(firsq,"Podcast Host",author)
     combined = combine(hostd, guestd)
+    os.remove(f'./output/conversation_0.txt')
     combined.export(f"./output/conversation_0.mp3", format="mp3")
 else:
 	print("\nPart2, Start of the conversation is already completed.")
@@ -170,9 +171,8 @@ for i in range(len(qq)-1):
         conv = query(f'Based on the content, print out a part of an engaign conversation between a podcast host and a guest about {qq[i+1]}. The conversation has to be easy to understand for popular science communication. The conversation is just part of a more broader conversation. AVOID LISTING NAMES.')
         prGreen(f"We got topic {i+1}")
         save_output("main.txt", f'{conv}\n\n')
-
         save_output(f"conversation_{i+1}.txt", f'{conv}')
-        subprocess.run(["open", f"./output/conversation_{i+1}.txt"], check=True)
+        subprocess.run(["open", f"./output/conversation_{i+1}.txt"], check=True) #Open the file in default text editor for me to review
         prGreenIn(f"\nNOW REVIEW conversation_{i+1}.txt AND PRESS ENTER TO CONTINUE")
         with open(f'./output/conversation_{i+1}.txt', 'r') as file:
         	conv = file.read()
@@ -182,9 +182,19 @@ for i in range(len(qq)-1):
     else:
 	    print(f"\nconversation_{i+1}.mp3 is already completed.")
 
-prGreen("We have the conversation!!")
-
 ###Combining the conversations from 0 to 9
+if not(os.path.exists('./output/Conversation.mp3')):
+    silence_duration = 1000
+    silence_segment = AudioSegment.silent(duration=silence_duration)
+    p = AudioSegment.from_file("./output/conversation_0.mp3", format="mp3")
+    conversation = silence_segment + p
+    for i in range(9):
+        p = AudioSegment.from_file(f"./output/conversation_{i+1}.mp3", format="mp3")
+        conversation = conversation + silence_segment + p
+    conversation.export("./output/Conversation.mp3", format="mp3")
+    prGreen("We have the conversation!!")
+else:
+	print(f"\nConversation.mp3 is already completed.")
 
 ###The closure
 prGreen("\nThe ending:")
@@ -198,4 +208,22 @@ ans, token_dict = get_completion_and_token_count(messages, temperature=0)
 prGreen("The outro:")
 print(f"{ans}\n")
 save_output("main.txt", ans)
+save_output("outro.txt", f'{ans}')
+subprocess.run(["open", "./output/outro.txt"], check=True)
+prGreenIn("\nNOW REVIEW outro.txt AND PRESS ENTER TO CONTINUE")
+gen_audio("./output/outro.txt", 'Stephen', 2)
+
+remove = prGreenIn("\nIf you are ok with the result we can start cleaning up the folder ./output (yes/no): ")
+if remove == 'yes':
+    output_file = "./output/Conversation.txt"
+    for i in range(10):
+        with open(output_file, "w") as outfile:
+            with open(f'./output/conversation_{i}.txt', "r") as infile:
+                outfile.write(infile.read())
+        os.remove(f'./output/conversation_{i}.mp3')
+    prGreen("\n./output folder cleaned up!!")
+
+
+
+
 
