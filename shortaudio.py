@@ -27,9 +27,9 @@ def combine(hostd=[], guestd=[]):
     combined = hostdl[0] + silence_segment + guestdl[0] + silence_segment
     for i in range(minlen-1):
         combined = combined + hostdl[i+1] + silence_segment + guestdl[i+1] + silence_segment
-    if max(len(hostd), len(guestd)) == len(hostd):
+    if len(hostd) != len(guestd) & max(len(hostd), len(guestd)) == len(hostd):
         combined = combined + hostdl[len(hostd)-1] + silence_segment
-    #elif max(len(hostd), len(guestd)) == len(guestd):
-    else:
+    elif len(hostd) != len(guestd) & max(len(hostd), len(guestd)) == len(guestd):
+    #elif:
         combined = combined + guestdl[len(guestd)-1] + silence_segment
     return combined
