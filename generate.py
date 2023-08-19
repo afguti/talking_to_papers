@@ -128,17 +128,12 @@ search = arxiv.Search(id_list=[paper_id])
 paper = next(search.results())
 if not(os.path.exists('./output/topics.txt')):
     prGreen("\nTopics to drive the conversation:")
-    #text = f'List 10 topics from the TEXT enclosed below for an engaging conversation between the autors of the paper and a regular \
-    #person with no background in science who wants to understand the implications of the content of the TEXT for an average person. \
-    #The questions have to be in an order that can help to understand the TEXT. The questions have to be relevant to the content of \
-    #the TEXT. The questions have to be put in a python list.\nTEXT:\n{paper.summary}'
     text = f'Generate a list of 10 engaging topics based on the provided TEXT that could facilitate a conversation between \
     the author of the TEXT and an individual without a science background. This person is seeking to comprehend the implications \
     of the TEXT\'s content on an average person\'s perspective. Organize the topics in a coherent sequence that aids in the \
     reader\'s understanding of the TEXT. Ensure the topics do not overlap to prevent redundancy. \
     Formulate topics that are directly related to the content of the TEXT. Print out only the list of topics. \
     Here is the TEXT for reference:\n{paper.summary}'
-
     messages =  [  
     {'role':'system', 
      'content':"""You are a popular science communicatora and content creator"""},    
@@ -156,7 +151,30 @@ else:
         ans = file.read()
     lines = ans.strip().split("\n")
     qq = [line.split(". ", 1)[1] for line in lines] #These are the topics that will be used for the conversation
-    print(ans)   
+    print(ans) 
+
+###Gueting the description
+search = arxiv.Search(id_list=[paper_id])
+paper = next(search.results())
+if not(os.path.exists('./output/description.txt')):
+    prGreen("\nGenerating the description:")
+    text = f'Generate a description of about 100 words based on the provided TEXT below. \
+    The description is for a podcast episode in which there will be a discussion about TEXT. \
+    The description has to be engaging and trigger the curiosity of the reader.\
+    The description has to include at the bottom: LINK TO THE PAPER:\nhttps://arxiv.org/pdf/{paper_id}.pdf \
+    Write a short but provoking title for the podcast below the LINK, present it as TITLE: \
+    Here is the TEXT for reference:\n{paper.summary}'
+    messages =  [  
+    {'role':'system', 
+     'content':"""You a professional writer and a content creator."""},    
+    {'role':'user', 'content':text},  
+    ]
+    ans, token_dict = get_completion_and_token_count(messages, temperature=0)
+    save_output("description.txt",ans)
+    subprocess.run(["open", "./output/description.txt"], check=True) #Open file for revision in default OS text editor
+    prGreenIn("\nNOW REVIEW description.txt AND PRESS ENTER TO CONTINUE")
+else:
+    prGreen("Description was printed already!")
 
 ###The introduction of the episode
 if not(os.path.exists('./output/final_p1.mp3')):
@@ -209,40 +227,31 @@ if not(os.path.exists('./output/Conversation.mp3')):
         prGreenIn(f"\nNOW REVIEW Conversation.txt AND PRESS ENTER TO CONTINUE")
     else:     
     	print(f"\nConversation.txt is already completed.")
-    with open(f'./output/Conversation.txt', 'r') as file:
-    	conv = file.read()
-    #text = f'Please review the following TEXT and provide a list of word frequencies where words are used more than 3 times. \
-    #Provide a list of phrases and the number of times they are being used though the TEXT. \
-    #Identify redundant messages that are provided two times or more. \
-    #Additionally, check for any spelling and grammar errors, and assess the logical flow of the conversation. \
-    #Are there any overly complex or technical terms that might confuse audience? \
-    #Are there any overly long or convoluted responses that could be simplified? \
-    #Would the conversation effectively convey information, answer questions, or guide the audience? \
-    #Instead of generating a new conversation, present your observations in a list format for me to review and verify.\nTEXT:\n{conv}'
-    text = f'The provided TEXT represents a conversation. Please conduct a thorough review to identify and remove redundancies. \
-    Additionally, carefully check for any grammar and spelling errors, addressing them as necessary. \
-    Omit auxiliary phrases such as "Absolutely," "Fascinating," and similar expressions. Ensure a consistent flow throughout \
-    the conversation, maintaining coherence. Also, simplify any responses that are overly intricate or lengthy. \
-    The primary goal is to enhance TEXT to create a conversation that effectively conveys information, is consistent, answers queries, \
-    and guides the audience. Begin by introducing the guest appropriately, \
-    and conclude the conversation with a gracious note, allowing the guest to have the final say. \
-    As you enhance TEXT, focus on retaining both engagement and readability. Try to retain the lenght of the conversation. \
-    Below, you will find the provided TEXT for your assessment.\n{conv}'
-    #text = f'Please re-write from scratch the conversation provided in the TEXT below. Your goal is to enhance the conversation\'s coherence, \
-    #remove redundancies, and ensure a consistent logical flow. Begin by introducing the guest appropriately, \
-    #and conclude the conversation with a gracious note, allowing the guest to have the final say. \
-    #While re-writing, focus on maintaining engagement and readability. Here is the original TEXT for your reference:\n{conv}'
-    messages =  [  
-    {'role':'system', 
-     'content':"""You are an expert writer, content creator, and popular science communicator."""},    
-    {'role':'user', 'content':text},  
-    ]
-    ans, token_dict = get_completion_gpt4(messages, temperature=0)
-    prRed(f'\nNumber of tokens used are: {token_dict}\n')
-    save_output("Conversation_GPT4.txt", f'{ans}')
-    prGreen("Conversation edited by GPT4!\n")
-    subprocess.run(["open", f"./output/Conversation_GPT4.txt"], check=True)
-    prGreenIn(f"\nNOW REVIEW Conversation_GPT4.txt AGAIN AND PRESS ENTER TO CONTINUE")
+    if not(os.path.exists(f'./output/Conversation_GPT4.txt')):
+        with open(f'./output/Conversation.txt', 'r') as file:
+        	conv = file.read()
+        text = f'The provided TEXT represents a conversation. Please conduct a thorough review to identify and remove redundancies. \
+        Additionally, carefully check for any grammar and spelling errors, addressing them as necessary. \
+        Omit auxiliary phrases such as "Absolutely," "Fascinating," and similar expressions. Ensure a consistent flow throughout \
+        the conversation, maintaining coherence. Also, simplify any responses that are overly intricate or lengthy. \
+        The primary goal is to enhance TEXT to create a conversation that effectively conveys information, is consistent, answers queries, \
+        and guides the audience. Begin by introducing the guest appropriately, \
+        and conclude the conversation with a gracious note, allowing the guest to have the final say. \
+        As you enhance TEXT, focus on retaining both engagement and readability. Try to retain the lenght of the conversation. \
+        Below, you will find the provided TEXT for your assessment.\n{conv}'
+        messages =  [  
+        {'role':'system', 
+         'content':"""You are an expert writer, content creator, and popular science communicator."""},    
+        {'role':'user', 'content':text},  
+        ]
+        ans, token_dict = get_completion_gpt4(messages, temperature=0)
+        prRed(f'\nNumber of tokens used are: {token_dict}\n')
+        save_output("Conversation_GPT4.txt", f'{ans}')
+        prGreen("Conversation edited by GPT4!\n")
+        subprocess.run(["open", f"./output/Conversation_GPT4.txt"], check=True)
+        prGreenIn(f"\nNOW REVIEW Conversation_GPT4.txt AGAIN AND PRESS ENTER TO CONTINUE")
+    else:
+        prGreen('Conversation_GPT4.txt Already exist.\n')
     with open(f'./output/Conversation_GPT4.txt', 'r') as file:
     	conv = file.read()
     hostd, guestd = separate(conv,"Host","Guest")
@@ -282,6 +291,8 @@ silence_segment = AudioSegment.silent(duration=silence_duration)
 combined = intro + silence_segment + conversation + silence_segment + outro
 combined.export(f"./output/Audio_{paper_id}.mp3", format="mp3")
 prRed(f"FIND THE FINAL AUDIO IN Audio_{paper_id}.mp3 FILE.")
+
+
 
 #remove = prGreenIn("\nIf you are ok with the result we can start cleaning up the folder ./output (yes/no): ")
 #if remove == 'yes':
