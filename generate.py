@@ -162,7 +162,7 @@ if not(os.path.exists('./output/description.txt')):
     The description is for a podcast episode in which there will be a discussion about TEXT. \
     The description has to be engaging and trigger the curiosity of the reader.\
     The description has to include at the bottom: LINK TO THE PAPER:\nhttps://arxiv.org/pdf/{paper_id}.pdf \
-    Write a short but provoking title for the podcast below the LINK, present it as TITLE: \
+    Write a very short (three to four words) but provoking title for the podcast below the LINK, present it as TITLE: \
     Here is the TEXT for reference:\n{paper.summary}'
     messages =  [  
     {'role':'system', 
@@ -174,7 +174,7 @@ if not(os.path.exists('./output/description.txt')):
     subprocess.run(["open", "./output/description.txt"], check=True) #Open file for revision in default OS text editor
     prGreenIn("\nNOW REVIEW description.txt AND PRESS ENTER TO CONTINUE")
 else:
-    prGreen("Description was printed already!")
+    prGreen("\nDescription was printed already!")
 
 ###The introduction of the episode
 if not(os.path.exists('./output/final_p1.mp3')):
@@ -197,11 +197,11 @@ if not(os.path.exists('./output/final_p1.mp3')):
     prGreenIn("\nNOW REVIEW intro.txt AND PRESS ENTER TO CONTINUE")
     gen_audio("./output/intro.txt", 'Stephen', 1)
 else:
-	print("\nPart 1, Introduction is already completed.")	
+	prGreen("\nPart 1, Introduction is already completed.")	
 
 ###The conversation
 if not(os.path.exists('./output/Conversation.mp3')):
-    prGreen("\nThe conversation:")
+    print("\nThe conversation:")
     if not(os.path.exists(f'./output/Conversation.txt')):
         prGreen("\nQuicking off the conversation:")
         print(f"Authors are: {paper.authors}")
@@ -226,7 +226,7 @@ if not(os.path.exists('./output/Conversation.mp3')):
         subprocess.run(["open", f"./output/Conversation.txt"], check=True)
         prGreenIn(f"\nNOW REVIEW Conversation.txt AND PRESS ENTER TO CONTINUE")
     else:     
-    	print(f"\nConversation.txt is already completed.")
+    	prGreen(f"\nConversation.txt is already completed.")
     if not(os.path.exists(f'./output/Conversation_GPT4.txt')):
         with open(f'./output/Conversation.txt', 'r') as file:
         	conv = file.read()
@@ -251,7 +251,7 @@ if not(os.path.exists('./output/Conversation.mp3')):
         subprocess.run(["open", f"./output/Conversation_GPT4.txt"], check=True)
         prGreenIn(f"\nNOW REVIEW Conversation_GPT4.txt AGAIN AND PRESS ENTER TO CONTINUE")
     else:
-        prGreen('Conversation_GPT4.txt Already exist.\n')
+        prGreen('\nConversation_GPT4.txt Already exist.')
     with open(f'./output/Conversation_GPT4.txt', 'r') as file:
     	conv = file.read()
     hostd, guestd = separate(conv,"Host","Guest")
@@ -279,10 +279,10 @@ if not(os.path.exists('./output/final_p2.mp3')):
     prGreenIn("\nNOW REVIEW outro.txt AND PRESS ENTER TO CONTINUE")
     gen_audio("./output/outro.txt", 'Stephen', 2)
 else:
-	print(f"\nOutro is already completed.")
+	prGreen(f"\nOutro is already completed.")
 
 ###Convining intro, conversation, and outro.
-prGreen('\nPreparing final Audio')
+print('\nPreparing final Audio')
 intro = AudioSegment.from_file("./output/final_p1.mp3", format="mp3")
 conversation = AudioSegment.from_file("./output/Conversation.mp3", format="mp3")
 outro = AudioSegment.from_file("./output/final_p2.mp3", format="mp3")
